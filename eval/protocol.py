@@ -25,7 +25,7 @@ Sample = Tuple[Union[str, Image.Image], int]  # (path-or-PIL-image, label)
 EvaluateFn = Callable[[DataLoader], float]      # loader -> macro_f1
 
 
-def _load_gray(item: Union[str, Image.Image]) -> Image.Image:
+def load_gray(item: Union[str, Image.Image]) -> Image.Image:
     if isinstance(item, Image.Image):
         return item.convert("L")
     return Image.open(item).convert("L")
@@ -62,7 +62,7 @@ class CorruptionDataset(Dataset):
 
     def __getitem__(self, idx: int):
         item, label = self.samples[idx]
-        img = _load_gray(item)
+        img = load_gray(item)
         apply_fn = apply_id_degradation if self.regime == "id" else apply_ood_degradation
         img = apply_fn(img, self.deg_type, self.severity, seed=self.seed_base + idx)
         return self.transform(img), label
