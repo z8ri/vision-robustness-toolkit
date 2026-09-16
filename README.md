@@ -1,6 +1,6 @@
 # Vision Robustness Toolkit
 
-**A from-scratch toolkit for building and evaluating corruption-robust industrial vision models** — a physically-grounded degradation protocol, a wavelet-domain sample-adaptive attention module, curriculum-driven adaptive augmentation, slice-based robustness evaluation, calibrated selective prediction, ONNX deployment validation, and a real ConvNeXt-Tiny + S-WFA training pipeline tying all of it together. 198 passing tests, zero GPU or proprietary data required to run any of it.
+**A toolkit for building and evaluating corruption-robust industrial vision models** — a physically-grounded degradation protocol, a wavelet-domain sample-adaptive attention module, curriculum-driven adaptive augmentation, slice-based robustness evaluation, calibrated selective prediction, ONNX deployment validation, and a real ConvNeXt-Tiny + S-WFA training pipeline tying all of it together. 198 passing tests, zero GPU or proprietary data required to run any of it.
 
 [![tests](https://github.com/z8ri/vision-robustness-toolkit/actions/workflows/tests.yml/badge.svg)](https://github.com/z8ri/vision-robustness-toolkit/actions/workflows/tests.yml)
 ![python](https://img.shields.io/badge/python-3.9%2B-blue)
@@ -10,15 +10,15 @@
 
 ---
 
-## Data
+## Data and provenance
 
 The dataset this project targets is confidential and isn't included here, which is the one thing that keeps this from being run end-to-end in this repo. `data/dataset.py` reads a standard `root/<class_name>/<image>` layout — point `train.py` at a real directory in that shape on a machine with a GPU, and it trains. This repo's own tests run the identical code path against synthetic placeholder images instead (`tests/_synthetic.py`), so all 198 tests run on a laptop CPU in under two minutes, no GPU or dataset needed.
 
-The degradation protocol, S-WFA, and A-PhysDeg here originate from research behind an academic paper currently under submission (not yet public); this repository is an independent, from-scratch reimplementation of those ideas.
+**Where this code comes from.** The degradation protocol, S-WFA, A-PhysDeg, Robustness Cube, calibration, and ONNX components were developed in a private research codebase (Feb–Jun 2026) behind an academic paper currently under submission. That codebase can't be published because it is tied to the confidential dataset. This repository is the public, dataset-free extraction of its reusable components, assembled on 2026-09-16 with fresh tests and a synthetic-data path. The commit history here reflects that extraction, not the original development timeline.
 
 ## Results
 
-Numbers below are from actually pointing `train.py` at the confidential dataset on a GPU (not reproducible from this repo's public synthetic-data tests, but reported here since the code paths are identical). Baseline is ConvNeXt-Tiny with neither PhysDeg nor S-WFA.
+Numbers below come from the private research codebase described above — 69 GPU runs on the confidential dataset (5-seed repeats, multiple backbones and datasets), run before this public extraction existed. This repo shares the same component implementations but contains no data, so **these numbers are not reproducible from this repo**; they are reported to show what the components achieve in the setting they were built for. Baseline is ConvNeXt-Tiny with neither PhysDeg nor S-WFA.
 
 | Stage | Clean macro-F1 | ID mPC (7 known corruptions) | OOD mPC (8 unseen corruptions) |
 |---|---|---|---|
@@ -27,7 +27,7 @@ Numbers below are from actually pointing `train.py` at the confidential dataset 
 | + S-WFA (final, +1.5M params / +1% GMACs) | 97.6% | **97.4%** | **93.7%** |
 
 - Closes **94%** of the clean-vs-corrupted gap, at a **0.6pp** cost to clean accuracy.
-- Checked across **69 GPU runs**: 5-seed repeats, multiple backbones and datasets — not one lucky run.
+- Averaged over 5 seeds; consistent across backbones and datasets — not one lucky run.
 - Calibrated selective prediction (temperature scaling + reject-on-low-confidence): **90%** auto-decision coverage at **1.8%** error rate on what's left.
 - Exported model verified end-to-end: ONNX Runtime **P95 latency 6.2ms**.
 
@@ -84,7 +84,7 @@ flowchart TB
     subgraph Calib["5 · Calibration + Selective Prediction"]
         S1["Temperature scaling (LBFGS/NLL)"]
         S2["ECE / Brier / risk-coverage / AURC"]
-        S3["SelectivePredictor:<br/>accept or 拒绝判断/建议复核"]
+        S3["SelectivePredictor:<br/>accept / reject / recommend review"]
         S1 --> S2
         S1 --> S3
     end
