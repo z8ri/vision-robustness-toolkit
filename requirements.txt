@@ -1,0 +1,6 @@
+# 最小依赖，CPU 可跑通全部 smoke test（无需 GPU / 真实数据集）。
+numpy>=1.24
+Pillow>=9.5
+torch>=2.0
+torchvision>=0.15
+pytest>=7.4
