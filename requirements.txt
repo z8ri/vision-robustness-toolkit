@@ -4,3 +4,5 @@ Pillow>=9.5
 torch>=2.0
 torchvision>=0.15
 pytest>=7.4
+onnx>=1.16
+onnxruntime>=1.18

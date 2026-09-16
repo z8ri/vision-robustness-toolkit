@@ -24,7 +24,7 @@ from typing import Optional, Tuple
 import torch
 import torch.nn as nn
 
-from .wavelet import haar_dwt2d, haar_idwt2d
+from .wavelet import HaarDWT, HaarIDWT
 
 
 class WFACore(nn.Module):
@@ -40,6 +40,9 @@ class WFACore(nn.Module):
         # Clamp to >=1 so a small `channels` with the default reduction=32 still
         # builds a valid (if less compressive) bottleneck instead of raising.
         hidden = max(1, channels // reduction)
+
+        self.dwt = HaarDWT(channels)
+        self.idwt = HaarIDWT(channels)
 
         # Low-frequency channel attention (SE-style gate on the LL band).
         self.ll_fc1 = nn.Conv2d(channels, hidden, kernel_size=1)
@@ -60,7 +63,7 @@ class WFACore(nn.Module):
     def forward(
         self, x: torch.Tensor, return_raw_bands: bool = False
     ):
-        ll, lh, hl, hh = haar_dwt2d(x)
+        ll, lh, hl, hh = self.dwt(x)
 
         # LL channel attention.
         s = self.sigmoid(self.ll_fc2(self.relu(self.ll_fc1(self.gap(ll)))))  # (B, C, 1, 1)
@@ -77,7 +80,7 @@ class WFACore(nn.Module):
         g = self.sigmoid(self.cross_gate(gate_in))  # (B, C, 1, 1)
         ll_final = g * ll_refined
 
-        u = haar_idwt2d(ll_final, lh_r, hl_r, hh_r)
+        u = self.idwt(ll_final, lh_r, hl_r, hh_r)
         if return_raw_bands:
             return u, (ll, lh, hl, hh)
         return u
