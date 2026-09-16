@@ -1,4 +1,18 @@
-"""deploy/export.py — ONNX export with a dynamic batch axis by default."""
+"""deploy/export.py — ONNX export with a dynamic batch axis by default.
+
+Explicitly pins `dynamo=False` (the legacy TorchScript-based tracer). PyTorch
+2.9 flips `torch.onnx.export`'s default to the newer `torch.export`/`onnxscript`
+-based exporter, a genuinely different code path this project has never
+exercised — every claim in this repo about export correctness (the HaarDWT/
+HaarIDWT buffer fix, the PyTorch-vs-ONNX-Runtime agreement tests, the
+clean/ID/OOD regression check) was verified against the legacy tracer
+specifically. Pinning it in code, rather than relying on whatever a given
+`pip install torch` happens to default to, keeps "verified" meaning what it
+says instead of silently starting to mean "probably still fine on a code path
+nobody has run." (Discovered the hard way: this repo's own CI failed on a
+newer torch with `ModuleNotFoundError: No module named 'onnxscript'`, since
+the new exporter is an optional extra this project doesn't depend on.)
+"""
 import warnings
 from typing import Sequence
 
@@ -32,4 +46,5 @@ def export_to_onnx(
             input_names=list(input_names),
             output_names=list(output_names),
             dynamic_axes=dynamic_axes,
+            dynamo=False,
         )
